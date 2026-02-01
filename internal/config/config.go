@@ -81,6 +81,7 @@ func loadRedisConfig() RedisConfig {
 
 func validate(cfg *Config) {
 	if cfg.Scheduler.BatchSize <= 0 {
+		// TODO: return error instead of panic
 		panic("SCHED_BATCH_SIZE must be > 0")
 	}
 	if cfg.Scheduler.Interval <= 0 {

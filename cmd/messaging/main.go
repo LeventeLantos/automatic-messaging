@@ -1,9 +1,18 @@
 package main
 
 import (
-	"log"
+	"context"
+	"errors"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"github.com/LeventeLantos/automatic-messaging/internal/api"
 	"github.com/LeventeLantos/automatic-messaging/internal/config"
+
 	"github.com/joho/godotenv"
 )
 
@@ -12,13 +21,69 @@ func main() {
 
 	cfg, err := config.LoadAll()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
-	log.Printf("messaging app starting (addr=%s, interval=%s, batch=%d, redis=%v)",
-		cfg.Server.Address,
-		cfg.Scheduler.Interval,
-		cfg.Scheduler.BatchSize,
-		cfg.Redis.Enabled,
-	)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+	slog.SetDefault(logger)
+
+	h := api.NewHandler()
+	router := api.Router(h)
+
+	srv := &http.Server{
+		Addr:              cfg.Server.Address,
+		Handler:           loggingMiddleware(router),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		slog.Info("http server starting", "addr", cfg.Server.Address)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("http server error", "err", err)
+			stop()
+		}
+	}()
+
+	<-ctx.Done()
+	slog.Info("shutdown requested")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		slog.Error("shutdown error", "err", err)
+	} else {
+		slog.Info("shutdown complete")
+	}
+}
+
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		ww := &wrapWriter{ResponseWriter: w, status: 200}
+
+		next.ServeHTTP(ww, r)
+
+		slog.Info("http request",
+			"method", r.Method,
+			"path", r.URL.Path,
+			"status", ww.status,
+			"duration_ms", time.Since(start).Milliseconds(),
+		)
+	})
+}
+
+type wrapWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *wrapWriter) WriteHeader(status int) {
+	w.status = status
+	w.ResponseWriter.WriteHeader(status)
 }
