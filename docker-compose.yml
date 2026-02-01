@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: messaging-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: messaging
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: messaging-api
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_URL: postgres://postgres:postgres@postgres:5432/messaging?sslmode=disable
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      SERVER_ADDRESS: ":8080"
+      CONTENT_MAX: "160"
+      SCHED_INTERVAL_SECONDS: "120"
+      SCHED_BATCH_SIZE: "2"
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres-data:

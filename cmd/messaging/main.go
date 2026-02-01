@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -12,8 +13,10 @@ import (
 
 	"github.com/LeventeLantos/automatic-messaging/internal/api"
 	"github.com/LeventeLantos/automatic-messaging/internal/config"
+	"github.com/LeventeLantos/automatic-messaging/internal/repo"
 	"github.com/LeventeLantos/automatic-messaging/internal/scheduler"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 )
 
@@ -25,10 +28,25 @@ func main() {
 		panic(err)
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
+
+	db, err := sql.Open("pgx", cfg.Database.PostgresURL)
+	if err != nil {
+		slog.Error("failed to open db", "err", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	pingCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := db.PingContext(pingCtx); err != nil {
+		slog.Error("failed to ping db", "err", err)
+		os.Exit(1)
+	}
+	slog.Info("db connected")
+
+	_ = repo.NewPostgresMessageRepo(db) // TODO
 
 	// TODO
 	sched, err := scheduler.New(cfg.Scheduler.Interval, func(ctx context.Context) {
