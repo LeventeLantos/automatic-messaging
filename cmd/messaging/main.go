@@ -12,6 +12,7 @@ import (
 
 	"github.com/LeventeLantos/automatic-messaging/internal/api"
 	"github.com/LeventeLantos/automatic-messaging/internal/config"
+	"github.com/LeventeLantos/automatic-messaging/internal/scheduler"
 
 	"github.com/joho/godotenv"
 )
@@ -29,7 +30,16 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 
-	h := api.NewHandler()
+	// TODO
+	sched, err := scheduler.New(cfg.Scheduler.Interval, func(ctx context.Context) {
+		slog.Info("placeholder tick: scheduler is running (no-op)")
+	})
+	if err != nil {
+		slog.Error("failed to create scheduler", "err", err)
+		panic(err)
+	}
+
+	h := api.NewHandler(sched)
 	router := api.Router(h)
 
 	srv := &http.Server{
@@ -51,6 +61,8 @@ func main() {
 
 	<-ctx.Done()
 	slog.Info("shutdown requested")
+
+	sched.Stop()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
