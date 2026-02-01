@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type Status string
 
 const (
@@ -14,4 +16,11 @@ type Message struct {
 	RecipientPhone string
 	Content        string
 	Status         Status
+
+	AttemptCount    int
+	LastError       *string
+	SentAt          *time.Time
+	RemoteMessageID *string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
