@@ -3,14 +3,16 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/LeventeLantos/automatic-messaging/internal/scheduler"
 )
 
 type Handler struct {
-	// TODO
+	scheduler *scheduler.Scheduler
 }
 
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(s *scheduler.Scheduler) *Handler {
+	return &Handler{scheduler: s}
 }
 
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
@@ -18,7 +20,17 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) SchedulerStatus(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"running": false})
+	writeJSON(w, http.StatusOK, map[string]any{"running": h.scheduler.IsRunning()})
+}
+
+func (h *Handler) SchedulerStart(w http.ResponseWriter, r *http.Request) {
+	h.scheduler.Start()
+	writeJSON(w, http.StatusOK, map[string]any{"running": h.scheduler.IsRunning()})
+}
+
+func (h *Handler) SchedulerStop(w http.ResponseWriter, r *http.Request) {
+	h.scheduler.Stop()
+	writeJSON(w, http.StatusOK, map[string]any{"running": h.scheduler.IsRunning()})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
