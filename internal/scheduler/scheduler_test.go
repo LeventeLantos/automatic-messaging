@@ -95,7 +95,7 @@ func TestScheduler_DoesNotTickAfterStop(t *testing.T) {
 		t.Fatalf("expected Start() true")
 	}
 
-	// Wait for a couple ticks so we have a baseline.
+	// Wait for a couple ticks, so we have a baseline.
 	waitForAtLeast(t, &calls, 2, 750*time.Millisecond)
 	beforeStop := calls.Load()
 
@@ -115,7 +115,7 @@ func TestScheduler_DoesNotTickAfterStop(t *testing.T) {
 func TestScheduler_ImmediateTickOnStart(t *testing.T) {
 	var calls atomic.Int64
 
-	// Use a very large interval, expectt an immediate tick on Start()
+	// Use a very large interval, expect an immediate tick on Start()
 	// due to safeTick before the loop.
 	s, err := New(10*time.Second, func(context.Context) {
 		calls.Add(1)
@@ -237,8 +237,6 @@ func TestScheduler_TickFnReceivesCancelableContext(t *testing.T) {
 	}
 }
 
-// waitForAtLeast waits until calls >= n or fails the test after timeout.
-// Uses polling to avoid test flakes across CI.
 func waitForAtLeast(t *testing.T, calls *atomic.Int64, n int64, timeout time.Duration) {
 	t.Helper()
 

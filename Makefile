@@ -21,7 +21,7 @@ MSG3 ?= Hello test message 3
 
 ID ?= 1
 
-.PHONY: health up down restart logs ps psql redis-cli \
+.PHONY: health up down restart test logs ps psql redis-cli \
         migrate seed drop-schema reset-db nuke-db \
         validate validate-db validate-redis-keys validate-redis-get
 
@@ -82,3 +82,6 @@ validate-redis-keys:
 
 validate-redis-get:
 	$(COMPOSE) exec -T $(REDIS_SVC) redis-cli GET msg:$(ID)
+
+test:
+	go test -v ./...
