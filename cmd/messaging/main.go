@@ -93,7 +93,7 @@ func main() {
 
 	sched.Start()
 
-	h := api.NewHandler(sched)
+	h := api.NewHandler(sched, msgRepo)
 	router := api.Router(h)
 
 	srv := &http.Server{
