@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -54,16 +55,18 @@ func (c *WebhookClient) Send(ctx context.Context, phoneNumber, message string) (
 	}
 	defer resp.Body.Close()
 
+	body, _ := io.ReadAll(resp.Body)
+
 	if resp.StatusCode != http.StatusAccepted {
-		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return "", fmt.Errorf("unexpected status code: %d body=%q", resp.StatusCode, string(body))
 	}
 
 	var sr sendResponse
-	if err := json.NewDecoder(resp.Body).Decode(&sr); err != nil {
-		return "", err
+	if err := json.Unmarshal(body, &sr); err != nil {
+		return "", fmt.Errorf("failed to decode json: %w body=%q", err, string(body))
 	}
 	if sr.MessageID == "" {
-		return "", fmt.Errorf("missing messageId in response")
+		return "", fmt.Errorf("missing messageId in response body=%q", string(body))
 	}
 
 	return sr.MessageID, nil
