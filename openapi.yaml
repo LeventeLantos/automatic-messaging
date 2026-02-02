@@ -1,0 +1,100 @@
+openapi: 3.0.3
+info:
+  title: Automatic Messaging API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /v1/health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok: { type: boolean }
+
+  /v1/scheduler/start:
+    post:
+      summary: Start automatic message sending
+      responses:
+        "200":
+          description: Scheduler started (or already running)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerStatus"
+
+  /v1/scheduler/stop:
+    post:
+      summary: Stop automatic message sending
+      responses:
+        "200":
+          description: Scheduler stopped (or already stopped)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerStatus"
+
+  /v1/scheduler/status:
+    get:
+      summary: Get scheduler status
+      responses:
+        "200":
+          description: Scheduler status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerStatus"
+
+  /v1/messages/sent:
+    get:
+      summary: List sent messages
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50, minimum: 1, maximum: 500 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0, minimum: 0 }
+      responses:
+        "200":
+          description: Sent messages
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Message"
+
+components:
+  schemas:
+    SchedulerStatus:
+      type: object
+      required: [running]
+      properties:
+        running: { type: boolean }
+
+    Message:
+      type: object
+      required: [id, recipientPhone, content, status, createdAt, updatedAt]
+      properties:
+        id: { type: integer, format: int64 }
+        recipientPhone: { type: string }
+        content: { type: string }
+        status: { type: string, enum: [pending, processing, sent, failed] }
+        attemptCount: { type: integer }
+        lastError: { type: string, nullable: true }
+        sentAt: { type: string, format: date-time, nullable: true }
+        remoteMessageId: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
