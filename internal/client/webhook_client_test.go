@@ -59,11 +59,11 @@ func TestWebhookClient_Send_Success(t *testing.T) {
 	if err := json.Unmarshal(captured.Body, &req); err != nil {
 		t.Fatalf("failed to decode request json: %v body=%q", err, string(captured.Body))
 	}
-	if req.PhoneNumber != "+361234567" {
-		t.Fatalf("expected phoneNumber %q, got %q", "+361234567", req.PhoneNumber)
+	if req.To != "+361234567" {
+		t.Fatalf("expected phoneNumber %q, got %q", "+361234567", req.To)
 	}
-	if req.Message != "hello" {
-		t.Fatalf("expected message %q, got %q", "hello", req.Message)
+	if req.Content != "hello" {
+		t.Fatalf("expected message %q, got %q", "hello", req.Content)
 	}
 }
 

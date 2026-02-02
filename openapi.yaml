@@ -2,8 +2,15 @@ openapi: 3.0.3
 info:
   title: Automatic Messaging API
   version: 1.0.0
+  description: |
+    Automatic message sending service.
+
+    The service periodically sends pending messages from the database
+    to an external webhook endpoint.
+
 servers:
   - url: http://localhost:8080
+
 paths:
   /v1/health:
     get:
@@ -17,7 +24,8 @@ paths:
                 type: object
                 required: [ok]
                 properties:
-                  ok: { type: boolean }
+                  ok:
+                    type: boolean
 
   /v1/scheduler/start:
     post:
@@ -58,10 +66,17 @@ paths:
       parameters:
         - in: query
           name: limit
-          schema: { type: integer, default: 50, minimum: 1, maximum: 500 }
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 500
         - in: query
           name: offset
-          schema: { type: integer, default: 0, minimum: 0 }
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
       responses:
         "200":
           description: Sent messages
@@ -82,19 +97,74 @@ components:
       type: object
       required: [running]
       properties:
-        running: { type: boolean }
+        running:
+          type: boolean
 
     Message:
       type: object
-      required: [id, recipientPhone, content, status, createdAt, updatedAt]
+      required:
+        - id
+        - recipientPhone
+        - content
+        - status
+        - createdAt
+        - updatedAt
       properties:
-        id: { type: integer, format: int64 }
-        recipientPhone: { type: string }
-        content: { type: string }
-        status: { type: string, enum: [pending, processing, sent, failed] }
-        attemptCount: { type: integer }
-        lastError: { type: string, nullable: true }
-        sentAt: { type: string, format: date-time, nullable: true }
-        remoteMessageId: { type: string, format: uuid, nullable: true }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
+        id:
+          type: integer
+          format: int64
+        recipientPhone:
+          type: string
+        content:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, sent, failed]
+        attemptCount:
+          type: integer
+        lastError:
+          type: string
+          nullable: true
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+        remoteMessageId:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # External Webhook Contract
+
+    WebhookSendRequest:
+      type: object
+      description: Payload sent to the external webhook endpoint
+      required: [to, content]
+      properties:
+        to:
+          type: string
+          description: Recipient phone number
+          example: "+361234567"
+        content:
+          type: string
+          description: Message content
+          example: "Hello from the automatic messaging service"
+
+    WebhookSendResponse:
+      type: object
+      description: Response returned by the external webhook
+      required: [message, messageId]
+      properties:
+        message:
+          type: string
+          example: Accepted
+        messageId:
+          type: string
+          format: uuid
+          example: 67f2f8a8-ea58-4ed0-a6f9-ff217df4d849

@@ -25,8 +25,8 @@ func NewWebhookClient(url string) *WebhookClient {
 }
 
 type sendRequest struct {
-	PhoneNumber string `json:"phoneNumber"`
-	Message     string `json:"message"`
+	To      string `json:"to"`
+	Content string `json:"content"`
 }
 
 type sendResponse struct {
@@ -36,8 +36,8 @@ type sendResponse struct {
 
 func (c *WebhookClient) Send(ctx context.Context, phoneNumber, message string) (string, error) {
 	reqBody, err := json.Marshal(sendRequest{
-		PhoneNumber: phoneNumber,
-		Message:     message,
+		To:      phoneNumber,
+		Content: message,
 	})
 	if err != nil {
 		return "", err
