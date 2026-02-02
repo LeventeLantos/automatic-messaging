@@ -26,7 +26,7 @@ ID ?= 1
         validate validate-db validate-redis-keys validate-redis-get
 
 health:
-	curl -s http://localhost:$(API_PORT)/v1/health || true
+	curl -s http://localhost:$(API_PORT)/v1/health
 
 up:
 	$(COMPOSE) up --build -d
