@@ -109,3 +109,12 @@ Expected output:
 ```
 {"ok":true}
 ```
+---
+
+### Run Unit tests
+
+Run the unit tests with:
+
+```bash
+make test
+```
